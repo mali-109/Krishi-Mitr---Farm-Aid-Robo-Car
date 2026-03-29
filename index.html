@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>KrishiMitr Smart Farming Dashboard</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:linear-gradient(to right,#e8f5e9,#f1f8e9);
+margin:0;
+text-align:center;
+}
+
+/* HEADER */
+header{
+background:url("https://images.unsplash.com/photo-1501004318641-b39e6451bec6") center/cover;
+color:white;
+padding:50px;
+font-size:30px;
+font-weight:bold;
+}
+
+/* CONTAINER */
+.container{
+max-width:1000px;
+margin:auto;
+padding:20px;
+}
+
+/* CARD */
+.card{
+background:white;
+padding:20px;
+margin-bottom:25px;
+border-radius:15px;
+box-shadow:0px 6px 20px rgba(0,0,0,0.15);
+transition:0.3s;
+}
+
+.card:hover{
+transform:scale(1.02);
+}
+
+/* BUTTON */
+button{
+padding:10px 20px;
+background:#2e7d32;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;
+}
+
+button:hover{
+background:#1b5e20;
+}
+
+/* INPUT */
+input,select{
+padding:10px;
+width:70%;
+border-radius:8px;
+border:1px solid #ccc;
+}
+
+/* ALERT */
+.alert{
+background:red;
+color:white;
+padding:15px;
+font-size:22px;
+border-radius:8px;
+margin-bottom:20px;
+}
+
+/* STATUS */
+.status-good{color:green;font-size:20px;font-weight:bold;}
+.status-danger{color:red;font-size:20px;font-weight:bold;}
+
+/* TABLE */
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:15px;
+}
+
+th{
+background:#c8e6c9;
+padding:10px;
+}
+
+td{
+padding:10px;
+border-bottom:1px solid #eee;
+}
+
+/* CHAT */
+.chat-response{
+background:#f9f9f9;
+padding:12px;
+border-left:5px solid #2e7d32;
+margin-top:15px;
+text-align:left;
+border-radius:8px;
+}
+
+/* PDF */
+.pdf-card{
+border:1px solid #ccc;
+padding:15px;
+border-radius:10px;
+background:#fafafa;
+width:200px;
+}
+
+/* IMAGE */
+img{
+border-radius:10px;
+max-width:100%;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+🌱 KrishiMitr Smart Farming Dashboard
+</header>
+
+<div class="container">
+
+<!-- CONNECT -->
+<div class="card">
+<h2>🔗 Connect Raspberry Pi</h2>
+<form method="POST">
+<input type="text" name="pi_ip" placeholder="Enter Raspberry Pi IP">
+<br><br>
+<button type="submit">Connect</button>
+</form>
+</div>
+
+<!-- ALERT -->
+{% if gas_alert %}
+<div class="alert">⚠ GAS DETECTED IN FARM AREA</div>
+{% endif %}
+
+<!-- STATUS -->
+<div class="card">
+<h2>🌿 Gas Status</h2>
+{% if gas_status == "Gas Detected" %}
+<p class="status-danger">⚠ Gas Detected</p>
+{% else %}
+<p class="status-good">Air Normal</p>
+{% endif %}
+</div>
+
+<!-- GRAPHS -->
+<div class="card">
+<h2>🌡 Temperature</h2>
+<img src="/static/temp_graph.png?v={{ range(1,1000)|random }}">
+</div>
+
+<div class="card">
+<h2>💧 Humidity</h2>
+<img src="/static/humidity_graph.png?v={{ range(1,1000)|random }}">
+</div>
+
+<div class="card">
+<h2>🌱 Soil Moisture</h2>
+<img src="/static/soil_graph.png?v={{ range(1,1000)|random }}">
+</div>
+
+<div class="card">
+<h2>📏 Distance</h2>
+<img src="/static/distance_graph.png?v={{ range(1,1000)|random }}">
+</div>
+
+<div class="card">
+<h2>🌿 Plant Health</h2>
+<img src="/static/health_graph.png?v={{ range(1,1000)|random }}">
+</div>
+
+<!-- TABLE -->
+<div class="card">
+<h2>📊 Sensor Data</h2>
+<button onclick="clearData()" style="background:red;">Clear Data</button>
+<br><br>
+{{ table | safe }}
+</div>
+
+<!-- CAMERA -->
+<div class="card">
+<h2>📷 Capture Plant Image</h2>
+<button onclick="capturePlant()">Capture</button>
+<p id="captureStatus"></p>
+</div>
+
+<!-- ✅ PDF SECTION (FIXED) -->
+<div class="card">
+<h2>📄 Crop Knowledge PDFs</h2>
+
+<div style="display:flex; gap:20px; flex-wrap:wrap; justify-content:center;">
+{% for pdf in pdfs %}
+<div class="pdf-card">
+<h4>{{ pdf }}</h4>
+
+<!-- IMPORTANT FIX -->
+<a href="/pdfs/{{ pdf | urlencode }}" target="_blank">📖 View</a><br><br>
+<a href="/pdfs/{{ pdf | urlencode }}" download>⬇ Download</a>
+
+</div>
+{% endfor %}
+</div>
+
+</div>
+
+<!-- CHATBOT -->
+<div class="card">
+<h2>🤖 AI Farming Assistant</h2>
+
+<select id="language">
+<option value="English">English</option>
+<option value="Hindi">Hindi</option>
+<option value="Marathi">Marathi</option>
+</select>
+
+<br><br>
+
+<input type="text" id="question" placeholder="Ask farming question">
+<br><br>
+
+<button onclick="askAI()">Ask</button>
+
+<div id="replyContainer" class="chat-response" style="display:none;">
+<p id="reply"></p>
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+function capturePlant(){
+let status=document.getElementById("captureStatus");
+status.innerText="Capturing...";
+fetch('/capture',{method:'POST'})
+.then(res=>res.json())
+.then(data=>{status.innerText="Status: "+(data.status || "Done");})
+.catch(()=>{status.innerText="Error connecting to Pi";});
+}
+
+function askAI(){
+let question=document.getElementById("question").value;
+let language=document.getElementById("language").value;
+
+let replyContainer=document.getElementById("replyContainer");
+let replyText=document.getElementById("reply");
+
+if(!question){alert("Enter a question");return;}
+
+replyText.innerText="Thinking...";
+replyContainer.style.display="block";
+
+fetch('/chat',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({message:question,language:language})
+})
+.then(res=>res.json())
+.then(data=>{replyText.innerText=data.reply;})
+.catch(()=>{replyText.innerText="AI unavailable";});
+}
+
+function clearData(){
+fetch('/clear',{method:'POST'})
+.then(()=>{alert("Data cleared");location.reload();});
+}
+
+</script>
+
+</body>
+</html>
