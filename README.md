@@ -29,3 +29,7 @@ KrishiMitr is an AI-powered smart farming system using Raspberry Pi, IoT, and Py
 ## 📱 APK Download
 Available in Releases section   
 https://drive.google.com/file/d/1ak8GdXezRQvUy1t6VqeDxBHO-8tEsd6A/view?usp=sharing
+### marigold dataset
+https://drive.google.com/drive/folders/1-EJxQqUJrlUPqLkd1ftJ-YY-5uKqrKk7?usp=drive_link
+### plant disease ai Model Path
+https://drive.google.com/file/d/1XswfsuwKPUQFScMfWdYG1MP_zsGOwo6-/view?usp=sharing
